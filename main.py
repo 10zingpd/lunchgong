@@ -1,8 +1,10 @@
 import os
 from dotenv import load_dotenv
-load_dotenv()
 import asyncio
 import time
+import socket
+
+load_dotenv()
 
 from viam.robot.client import RobotClient
 from viam.rpc.dial import Credentials, DialOptions
@@ -16,7 +18,7 @@ async def connect():
     )
     return await RobotClient.at_address('lunch-gong-main.ldnf5a9i14.viam.cloud', opts)
 
-async def main():
+async def moveHammer():
     machine = await connect()
 
     print('Resources:')
@@ -38,5 +40,27 @@ async def main():
     # Don't forget to close the machine when you're done!
     await machine.close()
 
+
+async def handle_client(client_socket, address):
+    print(f"Connection from {address}")
+    while True:
+        data = client_socket.recv(1024)
+        if not data:
+            break
+        print(f"Received from {address}: {data.decode('utf-8')}")
+        await moveHammer()
+    client_socket.close()
+    print(f"Connection closed from {address}")
+
+async def start_server(host='0.0.0.0', port=7555):
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.bind((host, port))
+    server.listen(5)
+    print(f"Server listening on {host}:{port}")
+
+    while True:
+        client_sock, address = server.accept()
+        await handle_client(client_sock, address)
+
 if __name__ == '__main__':
-    asyncio.run(main())
+    asyncio.run(start_server())
