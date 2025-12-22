@@ -1,7 +1,7 @@
 {
   "$schema": "https://dl.viam.dev/module.schema.json",
   "module_id": "10zing:lunchgong",
-  "visibility": "private",
+  "visibility": "public",
   "url": "",
   "description": "Lunch reminder - built on viam!",
   "applications": null,
