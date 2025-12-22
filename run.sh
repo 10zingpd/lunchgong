@@ -2,4 +2,4 @@
 
 set -eu
 
-exec uv run module.py
+exec uv run module.py $@
