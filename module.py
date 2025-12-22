@@ -1,22 +1,27 @@
-#!/home/tenzingdoleck/.cargo/bin/uv run
+#!/usr/bin/env python3
 
 import asyncio
 import time
+from typing import Mapping
 from viam.components.generic import Generic
 from viam.components.servo import Servo
 from viam.components.board import Board
 from viam.resource.easy_resource import EasyResource
 from viam.module.module import Module
-import asyncio
+from viam.proto.app.robot import ComponentConfig
+from viam.proto.common import ResourceName
+from viam.resource.base import ResourceBase
 
 
 class MyGeneric(Generic, EasyResource):
     MODEL = "tenzing:generic:gong"
     servo = None
     board = None
+    subteam = ''
 
 
-    def reconfigure(self, config, deps):
+    def reconfigure(self, config: ComponentConfig, dependencies: Mapping[ResourceName, ResourceBase]):
+        self.subteam = config.attributes.fields['subteam']
         global servo
         global board
         print("DEPS", deps)
@@ -40,7 +45,7 @@ class MyGeneric(Generic, EasyResource):
         text = command.get('text')
         print('text', text)
         # id for @nyc-lunch
-        if text==None or CONFIG.SUBTEAM in text:
+        if text==None or self.subteam in text:
             pin = await board.gpio_pin_by_name(name="11")
             await pin.set(high=True)
             time.sleep(0.1)

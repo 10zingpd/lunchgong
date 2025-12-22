@@ -1,0 +1,9 @@
+[project]
+name = "lunchgong"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "viam-sdk>=0.63.0",
+]
