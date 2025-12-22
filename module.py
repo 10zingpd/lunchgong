@@ -14,7 +14,7 @@ from viam.resource.base import ResourceBase
 
 
 class MyGeneric(Generic, EasyResource):
-    MODEL = "tenzing:generic:gong"
+    MODEL = "10zing:generic:gong"
     servo = None
     board = None
     subteam = ''
