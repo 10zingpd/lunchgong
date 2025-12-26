@@ -22,38 +22,34 @@ class MyGeneric(Generic, EasyResource):
 
     def reconfigure(self, config: ComponentConfig, dependencies: Mapping[ResourceName, ResourceBase]):
         self.subteam = config.attributes.fields['subteam']
-        global servo
-        global board
-        print("DEPS", deps)
-        deps = iter(deps.values())
-        fst = next(deps)
-        snd = next(deps)
+        print("DEPS", dependencies)
+        dependencies = iter(dependencies.values())
+        fst = next(dependencies)
+        snd = next(dependencies)
         if isinstance(fst, Servo):
-            servo = fst
-            board = snd
+            self.servo = fst
+            self.board = snd
         else:
-            servo = snd
-            board = fst
-        print('isInstance (servo)', isinstance(servo, Servo))
-        print('isInstance (board)', isinstance(board, Board))
+            self.servo = snd
+            self.board = fst
+        print('isInstance (servo)', isinstance(self.servo, Servo))
+        print('isInstance (board)', isinstance(self.board, Board))
         print("done")
 
 
     async def do_command(self, command: dict, **kwargs):
-        global servo
-        global board
         text = command.get('text')
         print('text', text)
         # id for @nyc-lunch
-        if text==None or self.subteam in text:
-            pin = await board.gpio_pin_by_name(name="11")
+        if text is None or self.subteam in text:
+            pin = await self.board.gpio_pin_by_name(name="11")
             await pin.set(high=True)
             time.sleep(0.1)
-            await servo.move(110)
+            await self.servo.move(110)
             time.sleep(0.5)
-            await servo.move(90)
+            await self.servo.move(90)
             time.sleep(0.2)
-            await servo.move(110)
+            await self.servo.move(110)
             time.sleep(0.5)
             await pin.set(high=False)
 
