@@ -19,6 +19,11 @@ class MyGeneric(Generic, EasyResource):
     board = None
     subteam = ''
 
+    @classmethod
+    def new(cls, config: ComponentConfig, dependencies: Mapping[ResourceName, ResourceBase]):
+        self = super().new(config, dependencies)
+        self.reconfigure(config, dependencies)
+        return self
 
     def reconfigure(self, config: ComponentConfig, dependencies: Mapping[ResourceName, ResourceBase]):
         self.subteam = config.attributes.fields['subteam']
@@ -35,7 +40,6 @@ class MyGeneric(Generic, EasyResource):
         print('isInstance (servo)', isinstance(self.servo, Servo))
         print('isInstance (board)', isinstance(self.board, Board))
         print("done")
-
 
     async def do_command(self, command: dict, **kwargs):
         text = command.get('text')

@@ -2,12 +2,18 @@
   "$schema": "https://dl.viam.dev/module.schema.json",
   "module_id": "10zing:lunchgong",
   "visibility": "public",
-  "url": "",
+  "url": "https://github.com/10zingpd/lunchgong",
   "description": "Lunch reminder - built on viam!",
   "applications": null,
   "entrypoint": "run.sh",
   "first_run": "",
-  "models":  [
-    {"api": "rdk:component:generic", "model": "10zing:generic:gong"} 
-  ]
+  "models": [
+    {
+      "api": "rdk:component:generic",
+      "model": "10zing:generic:gong"
+    }
+  ],
+  "build": {
+    "path": "module.tar.gz"
+  }
 }
