@@ -4,3 +4,4 @@ python-dotenv
   googleapis-common-protos~=1.60.0
   typing-extensions~=4.8.0
   protobuf~=4.24.3
+  gtts~=2.5.4
