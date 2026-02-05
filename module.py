@@ -4,13 +4,25 @@ import asyncio
 import time
 import os
 import re
+import sys
 import logging
 from typing import Mapping
 from gtts import gTTS
 
-# Set up logging
-logging.basicConfig(level=logging.INFO)
+# Set up logging: INFO to stdout (shows as info in Viam), WARNING/ERROR to stderr
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+if not logger.handlers:
+    fmt = logging.Formatter("%(levelname)s:%(name)s:%(message)s")
+    out = logging.StreamHandler(sys.stdout)
+    out.setLevel(logging.INFO)
+    out.addFilter(lambda r: r.levelno <= logging.INFO)
+    out.setFormatter(fmt)
+    err = logging.StreamHandler(sys.stderr)
+    err.setLevel(logging.WARNING)
+    err.setFormatter(fmt)
+    logger.addHandler(out)
+    logger.addHandler(err)
 from viam.components.generic import Generic
 from viam.components.servo import Servo
 from viam.components.board import Board
@@ -115,23 +127,15 @@ class MyGeneric(Generic, EasyResource):
                 time.sleep(0.5)
                 await pin.set(high=False)
 
+                # Then play audio with Slack message text (sequential: gong first, then speech)
                 if self.audioout:
-                    # Generate speech: "Lunch from [slack message] is here"
                     speech_text = "Lunch is here"
                     if text:
-                        # Remove Slack mention format like <!subteam^S0A52MERWTY>
                         cleaned_text = re.sub(r'<!subteam\^[^>]+>', '', text).strip()
                         if cleaned_text:
                             speech_text = f"Lunch from {cleaned_text} is here"
-                    temp_mp3 = "/tmp/tts.mp3"
-                    gTTS(text=speech_text, lang='en').save(temp_mp3)
-
-                    with open(temp_mp3, 'rb') as f:
-                        mp3_data = f.read()
-                    os.remove(temp_mp3)
-
-                    audio_info = AudioInfo(codec=AudioCodec.MP3, sample_rate_hz=24000, num_channels=1)
-                    await self.audioout.play(mp3_data, audio_info)
+                    logger.info(f"Playing speech: {speech_text[:60]}...")
+                    await self._play_speech(speech_text)
 
                 logger.info("Gong sequence completed successfully")
                 return {"ran": True}
@@ -143,6 +147,40 @@ class MyGeneric(Generic, EasyResource):
         else:
             logger.info("Condition not met, not triggering gong")
         return {"ran":False}
+
+    async def _play_speech(self, speech_text: str):
+        """Generate TTS and play audio. Sequential: called after gong."""
+        if not self.audioout:
+            return
+        temp_mp3 = "/tmp/tts.mp3"
+        try:
+            logger.info(f"Generating TTS for: {speech_text[:60]}...")
+            loop = asyncio.get_running_loop()
+            await loop.run_in_executor(
+                None,
+                lambda: gTTS(text=speech_text, lang='en').save(temp_mp3),
+            )
+            with open(temp_mp3, 'rb') as f:
+                mp3_data = f.read()
+            os.remove(temp_mp3)
+            logger.info(f"Playing audio ({len(mp3_data)} bytes)")
+            await self._play_audio_bytes(mp3_data)
+            logger.info("Speech playback finished")
+        except Exception as e:
+            logger.error(f"Speech playback failed: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
+        finally:
+            if os.path.exists(temp_mp3):
+                try:
+                    os.remove(temp_mp3)
+                except Exception:
+                    pass
+
+    async def _play_audio_bytes(self, mp3_data: bytes):
+        """Play raw MP3 bytes via AudioOut. Called from main event loop."""
+        audio_info = AudioInfo(codec=AudioCodec.MP3, sample_rate_hz=48000, num_channels=1)
+        await self.audioout.play(mp3_data, audio_info)
     
     async def _speak(self, text: str):
         """Text to speech."""
@@ -157,7 +195,7 @@ class MyGeneric(Generic, EasyResource):
             mp3_data = f.read()
         os.remove(temp_mp3)
 
-        audio_info = AudioInfo(codec=AudioCodec.MP3, sample_rate_hz=24000, num_channels=1)
+        audio_info = AudioInfo(codec=AudioCodec.MP3, sample_rate_hz=48000, num_channels=1)
         await self.audioout.play(mp3_data, audio_info)
 
 
